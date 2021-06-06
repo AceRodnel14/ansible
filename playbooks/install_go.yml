@@ -1,114 +1,114 @@
 # Choose target_host
 - import_playbook: choose_host.yml
-# # Update repository cache
-# - import_playbook: perform_update-upgrade.yml
-# # Install dependency
-# - import_playbook: install_wget.yml
+# Update repository cache
+- import_playbook: perform_update-upgrade.yml
+# Install dependency
+- import_playbook: install_wget.yml
 
 - hosts: target_host
   gather_facts: no
   become: true
   vars:
-    go_user: "{{ env.go_user | default('') }}"
+    go_user: "{{ ext.go_user | default('') }}"
     go_curr_ver: ""
-    go_latest_link: "{{ env.go_latest_link | default('https://golang.org/VERSION?m=text') }}"
+    go_latest_link: "{{ ext.go_latest_link | default('https://golang.org/VERSION?m=text') }}"
     go_arch: ""
-    go_ver: "{{ env.go_ver | default('latest') }}"
+    go_ver: "{{ ext.go_ver | default('latest') }}"
     go_os: ""
     archive_file: "{{ go_ver }}.{{ go_os }}-{{ go_arch }}.tar.gz"
-    download_url: "{{ env_download_url{{ archive_file }} | default('https://golang.org/dl/{{ archive_file }}') }}"
+    download_url: "{{ ext.download_url | default('https://golang.org/dl/') }}{{ archive_file }}"
   tasks:
-    # - name: Set Go architecture to ARM32
-    #   set_fact:
-    #     go_arch: armv6l
-    #   when:
-    #     - ansible_facts['architecture'] == "armv6l" or 
-    #       ansible_facts['architecture'] == "armv7l"
+    - name: Set Go architecture to ARM32
+      set_fact:
+        go_arch: armv6l
+      when:
+        - ansible_facts['architecture'] == "armv6l" or 
+          ansible_facts['architecture'] == "armv7l"
 
-    # - name: Set Go architecture to ARM64
-    #   set_fact:
-    #     go_arch: arm64
-    #   when:
-    #     - ansible_facts['architecture'] == "arm64"
+    - name: Set Go architecture to ARM64
+      set_fact:
+        go_arch: arm64
+      when:
+        - ansible_facts['architecture'] == "arm64"
 
-    # - name: Set Go architecture to AMD64
-    #   set_fact:
-    #     go_arch: amd64
-    #   when:
-    #     - ansible_facts['architecture'] == "amd64" or
-    #       ansible_facts['architecture'] == "x86_64"
+    - name: Set Go architecture to AMD64
+      set_fact:
+        go_arch: amd64
+      when:
+        - ansible_facts['architecture'] == "amd64" or
+          ansible_facts['architecture'] == "x86_64"
 
-    # - name: Set exact Go version.
-    #   set_fact:
-    #     go_ver: "go{{ go_ver }}"
-    #   when:
-    #     - go_ver != "latest"
+    - name: Set exact Go version.
+      set_fact:
+        go_ver: "go{{ go_ver }}"
+      when:
+        - go_ver != "latest"
 
-    # - name: Set latest Go version.
-    #   set_fact:
-    #     go_ver: "{{ lookup('url', go_latest_link, split_lines=False) }}"
-    #   when:
-    #     - go_ver == "latest"
+    - name: Set latest Go version.
+      set_fact:
+        go_ver: "{{ lookup('url', go_latest_link, split_lines=False) }}"
+      when:
+        - go_ver == "latest"
 
-    # - name: Set Go OS to Windows.
-    #   set_fact:
-    #     go_os: windows
-    #   when:
-    #     - ansible_facts['os_family'] == "Windows"
+    - name: Set Go OS to Windows.
+      set_fact:
+        go_os: windows
+      when:
+        - ansible_facts['os_family'] == "Windows"
 
-    # - name: Set Go OS to Linux.
-    #   set_fact:
-    #     go_os: linux
-    #   when:
-    #     - ansible_facts['os_family'] == "Debian" or
-    #       ansible_facts['os_family'] == "RedHat"
+    - name: Set Go OS to Linux.
+      set_fact:
+        go_os: linux
+      when:
+        - ansible_facts['os_family'] == "Debian" or
+          ansible_facts['os_family'] == "RedHat"
 
-    # - name: Display gathered information.
-    #   debug:
-    #     msg:
-    #       - "Architecture: {{ go_arch }}"
-    #       - "Version to download: {{ go_ver }}"
-    #       - "OS Family: {{ go_os }}"
+    - name: Display gathered information.
+      debug:
+        msg:
+          - "Architecture: {{ go_arch }}"
+          - "Version to download: {{ go_ver }}"
+          - "OS Family: {{ go_os }}"
 
-    # - name: Check Go version.
-    #   command: /usr/local/go/bin/go version
-    #   register: go_check
-    #   ignore_errors: True
+    - name: Check Go version.
+      command: /usr/local/go/bin/go version
+      register: go_check
+      ignore_errors: True
 
-    # - name: Set Go current version.
-    #   set_fact:
-    #     go_curr_ver: "{{ go_check.stdout.split(' ')[2] }}"
-    #   when: 
-    #     - go_check.failed == false
+    - name: Set Go current version.
+      set_fact:
+        go_curr_ver: "{{ go_check.stdout.split(' ')[2] }}"
+      when: 
+        - go_check.failed == false
 
-    # - name: Host does not have Go.
-    #   debug:
-    #     msg:
-    #       - "Go is not yet installed."
-    #   when: 
-    #     - go_check.failed == true
+    - name: Host does not have Go.
+      debug:
+        msg:
+          - "Go is not yet installed."
+      when: 
+        - go_check.failed == true
     
-    # - name: Host has Go.
-    #   debug:
-    #     msg:
-    #       - "Go is installed."
-    #   when: 
-    #     - go_check.failed == false    
+    - name: Host has Go.
+      debug:
+        msg:
+          - "Go is installed."
+      when: 
+        - go_check.failed == false    
 
-    # - name: Delete old Go folder.
-    #   file:
-    #     state: absent
-    #     path: /usr/local/go
-    #   when:
-    #     - go_ver != go_curr_ver
+    - name: Delete old Go folder.
+      file:
+        state: absent
+        path: /usr/local/go
+      when:
+        - go_ver != go_curr_ver
 
-    # - name: Download and extract Go from source
-    #   unarchive:
-    #       src: "{{ download_url }}"
-    #       dest: /usr/local
-    #       remote_src: yes
-    #   when:
-    #     - go_ver != go_curr_ver
+    - name: Download and extract Go from source
+      unarchive:
+          src: "{{ download_url }}"
+          dest: /usr/local
+          remote_src: yes
+      when:
+        - go_ver != go_curr_ver
 
     - name: Ask for User that will use Go.
       pause:
@@ -125,21 +125,35 @@
 
     - name: Install Go for all users.
       file:
-        src: "/usr/local/go/bin/go"
-        dest: "/usr/bin/go"
+        src: /usr/local/go/bin/go
+        dest: /usr/bin/go
         state: link
       when:
         - go_user == "ALL"
 
-    # - name: Install Go on Debian or Ubuntu systems
-    #   apt:
-    #     name: "python3"
-    #     state: latest
-    #   when:
-    #   - ansible_facts['distribution'] == "Debian" or ansible_facts['distribution'] == "Ubuntu"
-    # - name: Install Go on CentOS or RHEL systems
-    #   yum:
-    #     name: "python3"
-    #     state: latest
-    #   when:
-    #   - ansible_facts['distribution'] == "CentOS" or ansible_facts['distribution'] == "RedHat"
+    - name: Remove Go shortcut for all users.
+      file:
+        path: /usr/bin/go
+        state: absent
+      when:
+        - go_user != "ALL"
+
+    - name: Check if export... exists in {{ go_user }}
+      become_user: "{{ go_user }}"
+      lineinfile:
+        path: ~/.bashrc
+        regexp: '^export PATH=[\:\/\$a-zA-Z]+:/usr/local/go/bin$'
+        state: absent
+      check_mode: True
+      register: check_result
+      when:
+        - go_user != "ALL"
+
+    - name: Add export... in {{ go_user }}
+      become_user: "{{ go_user }}"
+      lineinfile:
+        path: ~/.bashrc
+        line: 'export PATH=$PATH:/usr/local/go/bin'
+      when: 
+        - go_user != "ALL"
+        - not check_result.found

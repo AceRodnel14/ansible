@@ -1,5 +1,6 @@
 ext:
-  go_user: "ALL"
+  # update and uncomment this if you want to specify the user
+  go_user: "agent"
   # update and uncomment this if latest link changed
   #go_latest_link: https://golang.org/VERSION?m=text
   # update and uncomment this if you want to use a specific version
