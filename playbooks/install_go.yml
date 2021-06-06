@@ -9,14 +9,14 @@
   gather_facts: no
   become: true
   vars:
-    go_user: 
-    go_curr_ver:
-    go_latest_link: https://golang.org/VERSION?m=text
-    go_arch:
-    go_ver: 1.16.4
-    go_os:
+    go_user: "{{ env.go_user | default('') }}"
+    go_curr_ver: ""
+    go_latest_link: "{{ env.go_latest_link | default('https://golang.org/VERSION?m=text') }}"
+    go_arch: ""
+    go_ver: "{{ env.go_ver | default('latest') }}"
+    go_os: ""
     archive_file: "{{ go_ver }}.{{ go_os }}-{{ go_arch }}.tar.gz"
-    download_url: "https://golang.org/dl/{{ archive_file }}"
+    download_url: "{{ env_download_url{{ archive_file }} | default('https://golang.org/dl/{{ archive_file }}') }}"
   tasks:
     # - name: Set Go architecture to ARM32
     #   set_fact:
@@ -110,12 +110,26 @@
     #   when:
     #     - go_ver != go_curr_ver
 
-    - name: Ask for User that will run Golang.
+    - name: Ask for User that will use Go.
       pause:
-        prompt: Please choose the user that will use Golang
+        prompt: Please choose the user that will use Go [ALL, root, agent, <user>]
       when:
-        - go_user == ""
+        - "go_user | length == 0"
       register: target
+
+    - name: Add user input as 'go_user'.
+      set_fact:
+        go_user: "{{  target.user_input }}"
+      when:
+        - "go_user | length == 0"
+
+    - name: Install Go for all users.
+      file:
+        src: "/usr/local/go/bin/go"
+        dest: "/usr/bin/go"
+        state: link
+      when:
+        - go_user == "ALL"
 
     # - name: Install Go on Debian or Ubuntu systems
     #   apt:

@@ -1,0 +1,8 @@
+ext:
+  go_user: "ALL"
+  # update and uncomment this if latest link changed
+  #go_latest_link: https://golang.org/VERSION?m=text
+  # update and uncomment this if you want to use a specific version
+  #go_ver: 1.16.5
+  # update and uncomment this if latest link changed
+  #download_url: "https://golang.org/dl/{{ archive_file }}"
