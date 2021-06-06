@@ -1,0 +1,70 @@
+# Choose target_host
+- import_playbook: choose_host.yml
+# Update repository cache
+- import_playbook: perform_update-upgrade.yml
+# Install dependency
+- import_playbook: install_wget.yml
+
+- hosts: target_host
+  gather_facts: no
+  become: true
+  vars:
+    go_latest_link: https://golang.org/VERSION?m=text
+    go_arch:
+    go_ver: latest
+    go_os:
+    archive_file: "go{{ go_ver }}.{{ go_os }}-{{ go_arch }}.tar.gz"
+  tasks:
+    - name: Delete old Go folder.
+      file:
+        state: absent
+        path: /usr/local/go
+    - name: Set Go architecture to ARM32
+      set_fact:
+        go_arch: arm6l
+      when:
+        - ansible_facts['architecture'] == "arm6l" or 
+          ansible_facts['architecture'] == "arm7l"
+    - name: Set Go architecture to ARM64
+      set_fact:
+        go_arch: arm64
+      when:
+        - ansible_facts['architecture'] == "arm64"
+    - name: Set Go architecture to AMD64
+      set_fact:
+        go_arch: amd64
+      when:
+        - ansible_facts['architecture'] == "amd64" or
+          ansible_facts['architecture'] == "x86_64"
+    - name: Set latest Go version.
+      set_fact:
+        go_ver: {{ lookup('url', go_latest_link, split_lines=False) }}
+      when:
+        - go_ver == "latest"
+    - name: Set Go OS to Windows.
+      set_fact:
+        go_os: windows
+      when:
+        - ansible_facts['os_family'] == "Windows"
+    - name: Set Go OS to Linux.
+      set_fact:
+        go_os: linux
+      when:
+        - ansible_facts['os_family'] == "Debian" or
+          ansible_facts['os_family'] == "RedHat"
+    - name: Print gathered info.
+      debug:
+        msg:
+          - {{ archive_file }}
+    # - name: Install Go on Debian or Ubuntu systems
+    #   apt:
+    #     name: "python3"
+    #     state: latest
+    #   when:
+    #   - ansible_facts['distribution'] == "Debian" or ansible_facts['distribution'] == "Ubuntu"
+    # - name: Install Go on CentOS or RHEL systems
+    #   yum:
+    #     name: "python3"
+    #     state: latest
+    #   when:
+    #   - ansible_facts['distribution'] == "CentOS" or ansible_facts['distribution'] == "RedHat"

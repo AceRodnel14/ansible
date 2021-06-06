@@ -17,7 +17,12 @@
       - python3-apt
       when:
       - ansible_facts['distribution'] == "CentOS" or ansible_facts['distribution'] == "RedHat"
-
+    - name: Upgrade all current packages on CentOS or RHEL systems
+      yum:
+        name: "*"
+        state: latest
+      when:
+      - ansible_facts['os_family'] == "RedHat"
 
 - hosts: target_host
   tasks:
