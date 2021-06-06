@@ -1,0 +1,11 @@
+inventory/host_vars/*
+!inventory/host_vars/host.md
+
+inventory/group_vars/*
+!inventory/group_vars/group.md
+
+inventory/keys/*
+!inventory/keys/keys.md
+
+inventory/hosts*
+!inventory/hosts.yml.md

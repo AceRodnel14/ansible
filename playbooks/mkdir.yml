@@ -1,0 +1,6 @@
+- hosts: pi01
+  tasks:
+  - name: Create directory
+    file:
+      path: ~/test
+      state: absent
