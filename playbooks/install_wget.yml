@@ -1,0 +1,16 @@
+- hosts: target_host
+  gather_facts: no
+  become: true
+  tasks:
+    - name: Install wget on Debian or Ubuntu systems
+      apt:
+        name: "wget"
+        state: latest
+      when:
+      - ansible_facts['distribution'] == "Debian" or ansible_facts['distribution'] == "Ubuntu"
+    - name: Install wget on CentOS or RHEL systems
+      yum:
+        name: "wget"
+        state: latest
+      when:
+      - ansible_facts['distribution'] == "CentOS" or ansible_facts['distribution'] == "RedHat"

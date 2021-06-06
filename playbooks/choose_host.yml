@@ -1,0 +1,25 @@
+- hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Verify 'target_host'.
+      pause:
+        prompt: Please choose the target host IP {{ groups['all'] }}
+      when:
+        - "'target_host' not in groups['all']"
+      register: target
+      delegate_to: localhost
+    - name: Add user input as 'target_host'.
+      add_host:
+        name: "{{ target.user_input }}"
+        groups: target_host
+      when:
+        - "'target_host' not in groups['all']"
+
+- hosts: target_host
+  tasks:
+    - name: Print HOSTNAME and IP ADDRESS.
+      debug:
+        msg:
+          - "Chosen target:"
+          - "{{ inventory_hostname }}"
+          - "{{ ansible_ssh_host }}"

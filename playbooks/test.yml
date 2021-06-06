@@ -1,5 +1,5 @@
 #- hosts: localhost
   
-- import_playbook: choose_user.yml
+- import_playbook: choose_host.yml
 - import_playbook: perform_updates.yml
 - import_playbook: install_python3.yml
