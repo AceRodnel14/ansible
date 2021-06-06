@@ -8,7 +8,7 @@
         - "'target_host' not in groups['all']"
         - "'target_host' not in groups"
       register: target
-      delegate_to: localhost
+#      delegate_to: localhost
     - name: Add user input as 'target_host'.
       add_host:
         name: "{{ target.user_input }}"

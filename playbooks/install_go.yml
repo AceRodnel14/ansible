@@ -1,61 +1,122 @@
 # Choose target_host
 - import_playbook: choose_host.yml
-# Update repository cache
-- import_playbook: perform_update-upgrade.yml
-# Install dependency
-- import_playbook: install_wget.yml
+# # Update repository cache
+# - import_playbook: perform_update-upgrade.yml
+# # Install dependency
+# - import_playbook: install_wget.yml
 
 - hosts: target_host
   gather_facts: no
   become: true
   vars:
+    go_user: 
+    go_curr_ver:
     go_latest_link: https://golang.org/VERSION?m=text
     go_arch:
-    go_ver: latest
+    go_ver: 1.16.4
     go_os:
-    archive_file: "go{{ go_ver }}.{{ go_os }}-{{ go_arch }}.tar.gz"
+    archive_file: "{{ go_ver }}.{{ go_os }}-{{ go_arch }}.tar.gz"
+    download_url: "https://golang.org/dl/{{ archive_file }}"
   tasks:
-    - name: Delete old Go folder.
-      file:
-        state: absent
-        path: /usr/local/go
-    - name: Set Go architecture to ARM32
-      set_fact:
-        go_arch: arm6l
+    # - name: Set Go architecture to ARM32
+    #   set_fact:
+    #     go_arch: armv6l
+    #   when:
+    #     - ansible_facts['architecture'] == "armv6l" or 
+    #       ansible_facts['architecture'] == "armv7l"
+
+    # - name: Set Go architecture to ARM64
+    #   set_fact:
+    #     go_arch: arm64
+    #   when:
+    #     - ansible_facts['architecture'] == "arm64"
+
+    # - name: Set Go architecture to AMD64
+    #   set_fact:
+    #     go_arch: amd64
+    #   when:
+    #     - ansible_facts['architecture'] == "amd64" or
+    #       ansible_facts['architecture'] == "x86_64"
+
+    # - name: Set exact Go version.
+    #   set_fact:
+    #     go_ver: "go{{ go_ver }}"
+    #   when:
+    #     - go_ver != "latest"
+
+    # - name: Set latest Go version.
+    #   set_fact:
+    #     go_ver: "{{ lookup('url', go_latest_link, split_lines=False) }}"
+    #   when:
+    #     - go_ver == "latest"
+
+    # - name: Set Go OS to Windows.
+    #   set_fact:
+    #     go_os: windows
+    #   when:
+    #     - ansible_facts['os_family'] == "Windows"
+
+    # - name: Set Go OS to Linux.
+    #   set_fact:
+    #     go_os: linux
+    #   when:
+    #     - ansible_facts['os_family'] == "Debian" or
+    #       ansible_facts['os_family'] == "RedHat"
+
+    # - name: Display gathered information.
+    #   debug:
+    #     msg:
+    #       - "Architecture: {{ go_arch }}"
+    #       - "Version to download: {{ go_ver }}"
+    #       - "OS Family: {{ go_os }}"
+
+    # - name: Check Go version.
+    #   command: /usr/local/go/bin/go version
+    #   register: go_check
+    #   ignore_errors: True
+
+    # - name: Set Go current version.
+    #   set_fact:
+    #     go_curr_ver: "{{ go_check.stdout.split(' ')[2] }}"
+    #   when: 
+    #     - go_check.failed == false
+
+    # - name: Host does not have Go.
+    #   debug:
+    #     msg:
+    #       - "Go is not yet installed."
+    #   when: 
+    #     - go_check.failed == true
+    
+    # - name: Host has Go.
+    #   debug:
+    #     msg:
+    #       - "Go is installed."
+    #   when: 
+    #     - go_check.failed == false    
+
+    # - name: Delete old Go folder.
+    #   file:
+    #     state: absent
+    #     path: /usr/local/go
+    #   when:
+    #     - go_ver != go_curr_ver
+
+    # - name: Download and extract Go from source
+    #   unarchive:
+    #       src: "{{ download_url }}"
+    #       dest: /usr/local
+    #       remote_src: yes
+    #   when:
+    #     - go_ver != go_curr_ver
+
+    - name: Ask for User that will run Golang.
+      pause:
+        prompt: Please choose the user that will use Golang
       when:
-        - ansible_facts['architecture'] == "arm6l" or 
-          ansible_facts['architecture'] == "arm7l"
-    - name: Set Go architecture to ARM64
-      set_fact:
-        go_arch: arm64
-      when:
-        - ansible_facts['architecture'] == "arm64"
-    - name: Set Go architecture to AMD64
-      set_fact:
-        go_arch: amd64
-      when:
-        - ansible_facts['architecture'] == "amd64" or
-          ansible_facts['architecture'] == "x86_64"
-    - name: Set latest Go version.
-      set_fact:
-        go_ver: {{ lookup('url', go_latest_link, split_lines=False) }}
-      when:
-        - go_ver == "latest"
-    - name: Set Go OS to Windows.
-      set_fact:
-        go_os: windows
-      when:
-        - ansible_facts['os_family'] == "Windows"
-    - name: Set Go OS to Linux.
-      set_fact:
-        go_os: linux
-      when:
-        - ansible_facts['os_family'] == "Debian" or
-          ansible_facts['os_family'] == "RedHat"
-    - name: Print gathered info.
-      debug:
-        msg:
-          - {{ archive_file }}
+        - go_user == ""
+      register: target
+
     # - name: Install Go on Debian or Ubuntu systems
     #   apt:
     #     name: "python3"
