@@ -1,0 +1,77 @@
+# Choose target_host
+- import_playbook: choose_host.yml
+
+- hosts: target_host
+  gather_facts: no
+  become: true
+  tasks:
+    - name: Ask for User that has Deluge.
+      pause:
+        prompt: Please choose the user that has Deluge
+      register: target
+
+    - name: Ask the action to be made.
+      pause:
+        prompt: What do you want to do? [stop, start, start_web, restart, restart_web]
+      register: action
+
+    - name: Stop the Deluge related services.
+      block:
+        - name: Stop deluged process. [1/2]
+          include_tasks: ./tasks/pkill.yml
+          with_items: "deluged"
+        - name: Stop the Deluge WebUI. [2/2]
+          include_tasks: ./tasks/pkill.yml
+          with_items: "deluge-web"
+      become: yes
+      become_user: "{{ target.user_input }}"
+      when: action.user_input == "stop"
+    
+    - name: Start deluge service only.
+      block:
+        - name: Start deluged process. [1/2]
+          shell: deluged
+        - name: Allow remote access. [2/2]
+          shell: deluge-console "config -s allow_remote True"
+      become: yes
+      become_user: "{{ target.user_input }}"
+      when: action.user_input == "start"
+
+    - name: Start deluge with WebUI access only.
+      block:
+        - name: Start deluged process. [1/2]
+          shell: deluged
+        - name: Start deluge web UI. [2/2]
+          shell: deluge-web --fork
+      become: yes
+      become_user: "{{ target.user_input }}"
+      when: action.user_input == "start_web"
+
+    - name: Restart deluge service only.
+      block:
+        - name: Stop deluged process. [1/3]
+          include_tasks: ./tasks/pkill.yml
+          with_items: "deluged"
+        - name: Start deluged process. [2/3]
+          shell: deluged
+        - name: Allow remote access. [3/3]
+          shell: deluge-console "config -s allow_remote True"
+      become: yes
+      become_user: "{{ target.user_input }}"
+      when: action.user_input == "restart"
+
+    - name: Restart deluge with WebUI access only.
+      block:
+        - name: Stop deluged process. [1/4]
+          include_tasks: ./tasks/pkill.yml
+          with_items: "deluged"
+        - name: Stop deluged process. [2/4]
+          include_tasks: ./tasks/pkill.yml
+          with_items: "deluge-web"
+        - name: Start deluged process. [3/4]
+          shell: deluged
+        - name: Start deluge web UI. [4/4]
+          shell: deluge-web --fork
+      become: yes
+      become_user: "{{ target.user_input }}"
+      when: action.user_input == "restart_web"
