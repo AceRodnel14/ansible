@@ -2,7 +2,7 @@
 - import_playbook: choose_host.yml
 
 - hosts: target_host
-  gather_facts: no
+  gather_facts: false
   become: true
   tasks:
     - name: Ask for User that has Deluge.
@@ -17,12 +17,22 @@
 
     - name: Stop the Deluge related services.
       block:
-        - name: Stop deluged process. [1/2]
+        - name: Check if deluged is running. [1/4]
+          shell: 'ps -eaf | grep deluged | grep -cv grep'
+          register: process
+          failed_when: ( process.rc not in [ 0, 1 ] )
+        - name: Stop deluged process. [2/4]
           include_tasks: ./tasks/pkill.yml
           with_items: "deluged"
-        - name: Stop the Deluge WebUI. [2/2]
+          when: process.stdout == "1"
+        - name: Check if deluge web is running. [3/4]
+          shell: 'ps -eaf | grep deluge-web | grep -cv grep'
+          register: process
+          failed_when: ( process.rc not in [ 0, 1 ] )
+        - name: Stop the Deluge WebUI. [4/4]
           include_tasks: ./tasks/pkill.yml
           with_items: "deluge-web"
+          when: process.stdout == "1"
       become: yes
       become_user: "{{ target.user_input }}"
       when: action.user_input == "stop"
