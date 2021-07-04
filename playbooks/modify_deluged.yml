@@ -1,19 +1,61 @@
 # Choose target_host
-- import_playbook: choose_host.yml
+- hosts: localhost
+  gather_facts: false
+  vars:
+    deluge_target: "{{ target | default('') }}"
+  tasks:
+    - name: Add user from extra_vars
+      add_host:
+        name: "{{ target }}"
+        groups: target_host
+      when:
+        - "deluge_target | length > 0"
+
+    - name: Get 'target_host' from user input.
+      include_tasks: ./tasks/choose_target.yml
+      when:
+        - "'target_host' not in groups['all']"
+        - "'target_host' not in groups"
 
 - hosts: target_host
   gather_facts: false
   become: true
+  vars:
+    deluge_user: "{{ user | default('') }}"
+    deluge_action: "{{ action | default('') }}"
   tasks:
+    - name: Print HOSTNAME and IP ADDRESS.
+      debug:
+        msg:
+          - "Chosen target:"
+          - "{{ inventory_hostname }}"
+          - "{{ ansible_ssh_host }}"
+
     - name: Ask for User that has Deluge.
       pause:
         prompt: Please choose the user that has Deluge
-      register: target
+      register: user_input
+      when:
+        - "deluge_user | length == 0"
+
+    - name: Save user input as user that has Deluge.
+      set_fact:
+        user: "{{ user_input.user_input }}"
+      when:
+        - "deluge_user | length == 0"
 
     - name: Ask the action to be made.
       pause:
         prompt: What do you want to do? [stop, start, start_web, restart, restart_web]
-      register: action
+      register: action_input
+      when:
+        - "deluge_action | length == 0"
+
+    - name: Save user input as action to be made.
+      set_fact:
+        deluge_action: "{{ action_input.user_input }}"
+      when:
+        - "deluge_action | length == 0"
 
     - name: Stop the Deluge related services.
       block:
@@ -34,8 +76,8 @@
           with_items: "deluge-web"
           when: process.stdout == "1"
       become: yes
-      become_user: "{{ target.user_input }}"
-      when: action.user_input == "stop"
+      become_user: "{{ deluge_user }}"
+      when: deluge_action == "stop"
     
     - name: Start deluge service only.
       block:
@@ -44,8 +86,8 @@
         - name: Allow remote access. [2/2]
           shell: deluge-console "config -s allow_remote True"
       become: yes
-      become_user: "{{ target.user_input }}"
-      when: action.user_input == "start"
+      become_user: "{{ deluge_user }}"
+      when: deluge_action == "start"
 
     - name: Start deluge with WebUI access only.
       block:
@@ -54,8 +96,8 @@
         - name: Start deluge web UI. [2/2]
           shell: deluge-web --fork
       become: yes
-      become_user: "{{ target.user_input }}"
-      when: action.user_input == "start_web"
+      become_user: "{{ deluge_user }}"
+      when: deluge_action == "start_web"
 
     - name: Restart deluge service only.
       block:
@@ -67,8 +109,8 @@
         - name: Allow remote access. [3/3]
           shell: deluge-console "config -s allow_remote True"
       become: yes
-      become_user: "{{ target.user_input }}"
-      when: action.user_input == "restart"
+      become_user: "{{ deluge_user }}"
+      when: deluge_action == "restart"
 
     - name: Restart deluge with WebUI access only.
       block:
@@ -83,5 +125,5 @@
         - name: Start deluge web UI. [4/4]
           shell: deluge-web --fork
       become: yes
-      become_user: "{{ target.user_input }}"
-      when: action.user_input == "restart_web"
+      become_user: "{{ deluge_user }}"
+      when: deluge_action == "restart_web"

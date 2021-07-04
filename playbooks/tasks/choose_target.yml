@@ -1,0 +1,9 @@
+- name: Verify 'target_host'.
+  pause:
+    prompt: Please choose the target host IP {{ groups['all'] }}
+  register: target
+#      delegate_to: localhost
+- name: Add user input as 'target_host'.
+  add_host:
+    name: "{{ target.user_input }}"
+    groups: target_host
